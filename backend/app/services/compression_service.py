@@ -90,7 +90,7 @@ class CompressionService:
         return huff_bytes, metrics, visualization_data
     
     @staticmethod
-    def decompress_file(huff_bytes: bytes) -> Tuple[str, str, CompressionMetrics]:
+    def decompress_file(huff_bytes: bytes) -> Tuple[str, str, CompressionMetrics, Dict]:
         """
         Descomprime un archivo .huff.
         
@@ -98,7 +98,7 @@ class CompressionService:
             huff_bytes: Datos del archivo .huff
             
         Returns:
-            Tupla (texto_descomprimido, nombre_original, métricas)
+            Tupla (texto_descomprimido, nombre_original, métricas, datos_para_visualización)
         """
         # 1. Leer archivo .huff
         original_filename, compressed_bits, frequencies, original_size = HuffBinaryFormat.read_huff_file(huff_bytes)
@@ -132,7 +132,12 @@ class CompressionService:
             compression_time=0.0
         )
         
-        return decompressed_text, original_filename, metrics
+        # 5. Preparar datos para visualización
+        visualization_data = CompressionService._prepare_visualization_data(
+            root, codes, frequencies, decompressed_text
+        )
+        
+        return decompressed_text, original_filename, metrics, visualization_data
     
     @staticmethod
     def _prepare_visualization_data(root, codes: Dict[str, str], frequencies: Dict[str, int], text: str) -> Dict:

@@ -12,7 +12,7 @@ import { useCompressionStore } from '@/lib/store'
 import { compressionApi } from '@/lib/api'
 
 export default function Home() {
-  const { currentSession, isCompressing, error, clearSession } = useCompressionStore()
+  const { currentSession, isCompressing, error, clearSession, sessionType } = useCompressionStore()
   const [isInitializing, setIsInitializing] = useState(true)
   const [textInput, setTextInput] = useState('')
   const [showTextInput, setShowTextInput] = useState(false)
@@ -43,7 +43,7 @@ export default function Home() {
 
       const response = await compressionApi.compressText(textInput)
       const session = await compressionApi.getSession(response.session_id)
-      setCurrentSession(session)
+      setCurrentSession(session, 'compress')
 
       toast.success('Texto comprimido exitosamente')
       setShowTextInput(false)
@@ -192,7 +192,9 @@ export default function Home() {
                 <div>
                   <h2 className="text-2xl font-bold text-foreground">{currentSession.filename}</h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Sesión procesada correctamente. Visualiza métricas y descarga resultados.
+                    {sessionType === 'decompress' 
+                      ? 'Archivo descomprimido exitosamente. Visualiza el contenido y descarga el archivo original.' 
+                      : 'Sesión procesada correctamente. Visualiza métricas y descarga resultados.'}
                   </p>
                 </div>
                 <button
@@ -200,90 +202,175 @@ export default function Home() {
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  Nueva compresión
+                  {sessionType === 'decompress' ? 'Nueva descompresión' : 'Nueva compresión'}
                 </button>
               </div>
 
-              {/* Botones de descarga */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleDownloadCompressed}
-                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-semibold transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  Descargar Archivo Comprimido (.huff)
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleDownloadDecompressed}
-                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 font-semibold transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  Descargar Archivo Original (.txt)
-                </motion.button>
-              </div>
+              {/* Sección de descompresión */}
+              {sessionType === 'decompress' ? (
+                <>
+                  {/* Botón de descarga para descompresión */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleDownloadDecompressed}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-semibold transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    Descargar Archivo Original (.txt)
+                  </motion.button>
 
-              {/* Métricas */}
-              <div>
-                <h3 className="text-xl font-bold text-foreground mb-4">Análisis de Compresión</h3>
-                <MetricsDisplay metrics={currentSession.metrics} />
-              </div>
+                  {/* Vista previa del texto descomprimido */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="border border-border rounded-xl p-6 bg-card/50 space-y-4"
+                  >
+                    <h3 className="text-lg font-semibold text-foreground">Contenido Descomprimido</h3>
+                    <div className="max-h-96 overflow-y-auto bg-background rounded-lg p-4 font-mono text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                      {currentSession.metrics.characters_count > 500
+                        ? `${currentSession.visualization?.frequencies?.[0]?.displayChar || '...'}`
+                        : null}
+                    </div>
+                  </motion.div>
 
-              {/* Tablas y visualización */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <FrequencyTable frequencies={currentSession.visualization.frequencies} />
-                </div>
-                <div>
-                  <HuffmanTreeVisualizer treeData={currentSession.visualization} />
-                </div>
-              </div>
+                  {/* Métricas de descompresión */}
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground mb-4">Información de Compresión</h3>
+                    <MetricsDisplay metrics={currentSession.metrics} />
+                  </div>
 
-              {/* Tabla de códigos */}
-              <CodeTable codes={currentSession.visualization.codes} />
+                  {/* Información del archivo */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  >
+                    <div className="border border-border rounded-xl p-6 bg-card/50">
+                      <p className="text-sm text-muted-foreground">Tamaño Original</p>
+                      <p className="text-2xl font-bold text-foreground mt-2">
+                        {(currentSession.metrics.original_size / 1024).toFixed(2)} KB
+                      </p>
+                    </div>
+                    <div className="border border-border rounded-xl p-6 bg-card/50">
+                      <p className="text-sm text-muted-foreground">Tamaño Comprimido</p>
+                      <p className="text-2xl font-bold text-foreground mt-2">
+                        {(currentSession.metrics.compressed_size / 1024).toFixed(2)} KB
+                      </p>
+                    </div>
+                    <div className="border border-border rounded-xl p-6 bg-card/50">
+                      <p className="text-sm text-muted-foreground">Reducción</p>
+                      <p className="text-2xl font-bold text-foreground mt-2">
+                        {currentSession.metrics.compression_ratio.toFixed(2)}%
+                      </p>
+                    </div>
+                    <div className="border border-border rounded-xl p-6 bg-card/50">
+                      <p className="text-sm text-muted-foreground">Caracteres</p>
+                      <p className="text-2xl font-bold text-foreground mt-2">
+                        {currentSession.metrics.characters_count.toLocaleString()}
+                      </p>
+                    </div>
+                  </motion.div>
 
-              {/* Información teórica */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="border border-border rounded-xl p-6 bg-card/50 space-y-4"
-              >
-                <h3 className="font-semibold text-foreground">Sobre esta compresión</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-                  <div>
-                    <p className="font-semibold text-foreground mb-1">Entropía de Shannon</p>
-                    <p>
-                      {currentSession.metrics.shannon_entropy.toFixed(3)} bits/símbolo. Representa el límite teórico
-                      mínimo de compresión posible.
-                    </p>
+                  {/* Tablas de análisis si disponibles */}
+                  {currentSession.visualization?.frequencies?.length > 0 && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <FrequencyTable frequencies={currentSession.visualization.frequencies} />
+                      </div>
+                      <div>
+                        <HuffmanTreeVisualizer treeData={currentSession.visualization} />
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Sección de compresión (original) */
+                <>
+                  {/* Botones de descarga */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleDownloadCompressed}
+                      className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-semibold transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      Descargar Archivo Comprimido (.huff)
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleDownloadDecompressed}
+                      className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 font-semibold transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      Descargar Archivo Original (.txt)
+                    </motion.button>
                   </div>
+
+                  {/* Métricas */}
                   <div>
-                    <p className="font-semibold text-foreground mb-1">Longitud Media de Código</p>
-                    <p>
-                      {currentSession.metrics.average_code_length.toFixed(3)} bits/símbolo. Nuestro algoritmo logra
-                      una compresión muy cercana al óptimo teórico.
-                    </p>
+                    <h3 className="text-xl font-bold text-foreground mb-4">Análisis de Compresión</h3>
+                    <MetricsDisplay metrics={currentSession.metrics} />
                   </div>
-                  <div>
-                    <p className="font-semibold text-foreground mb-1">Eficiencia</p>
-                    <p>
-                      {currentSession.metrics.efficiency.toFixed(2)}%. Qué tan cerca estamos del límite teórico de
-                      compresión óptima.
-                    </p>
+
+                  {/* Tablas y visualización */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <FrequencyTable frequencies={currentSession.visualization.frequencies} />
+                    </div>
+                    <div>
+                      <HuffmanTreeVisualizer treeData={currentSession.visualization} />
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-foreground mb-1">Reducción</p>
-                    <p>
-                      Se redujo {currentSession.metrics.compression_ratio.toFixed(2)}% del tamaño original. El archivo
-                      comprimido es significativamente más pequeño.
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
+
+                  {/* Tabla de códigos */}
+                  <CodeTable codes={currentSession.visualization.codes} />
+
+                  {/* Información teórica */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="border border-border rounded-xl p-6 bg-card/50 space-y-4"
+                  >
+                    <h3 className="font-semibold text-foreground">Sobre esta compresión</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
+                      <div>
+                        <p className="font-semibold text-foreground mb-1">Entropía de Shannon</p>
+                        <p>
+                          {currentSession.metrics.shannon_entropy.toFixed(3)} bits/símbolo. Representa el límite teórico
+                          mínimo de compresión posible.
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground mb-1">Longitud Media de Código</p>
+                        <p>
+                          {currentSession.metrics.average_code_length.toFixed(3)} bits/símbolo. Nuestro algoritmo logra
+                          una compresión muy cercana al óptimo teórico.
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground mb-1">Eficiencia</p>
+                        <p>
+                          {currentSession.metrics.efficiency.toFixed(2)}%. Qué tan cerca estamos del límite teórico de
+                          compresión óptima.
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground mb-1">Reducción</p>
+                        <p>
+                          Se redujo {currentSession.metrics.compression_ratio.toFixed(2)}% del tamaño original. El archivo
+                          comprimido es significativamente más pequeño.
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
             </motion.div>
           )}
         </motion.div>

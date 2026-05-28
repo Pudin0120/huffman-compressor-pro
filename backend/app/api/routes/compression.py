@@ -153,14 +153,15 @@ async def decompress_file(file: UploadFile = File(...)):
         huff_bytes = await file.read()
         
         # Descomprimir
-        decompressed_text, original_filename, metrics = CompressionService.decompress_file(huff_bytes)
+        decompressed_text, original_filename, metrics, visualization = CompressionService.decompress_file(huff_bytes)
         
         # Guardar sesión
         session_id = str(uuid.uuid4())
         sessions[session_id] = {
             "decompressed_text": decompressed_text,
             "filename": original_filename,
-            "metrics": metrics
+            "metrics": metrics,
+            "visualization": visualization
         }
         
         # Preview del texto
@@ -168,6 +169,7 @@ async def decompress_file(file: UploadFile = File(...)):
         
         return DecompressResponseSchema(
             success=True,
+            session_id=session_id,
             original_filename=original_filename,
             original_size=metrics.original_size,
             compressed_size=metrics.compressed_size,

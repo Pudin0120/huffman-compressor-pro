@@ -1,7 +1,6 @@
 'use client'
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts'
-import { Card } from '@radix-ui/react-primitive'
 import { motion } from 'framer-motion'
 import type { CompressionMetrics } from '@/types'
 import { FileText, HardDrive, Zap, TrendingDown } from 'lucide-react'

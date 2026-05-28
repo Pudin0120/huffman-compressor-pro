@@ -42,6 +42,7 @@ class DecompressResponseSchema(BaseModel):
     """Respuesta de descompresión"""
     
     success: bool
+    session_id: str
     original_filename: str
     original_size: int
     compressed_size: int

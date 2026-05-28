@@ -30,17 +30,21 @@ export default function FileUploadZone() {
       }
 
       let response
+      let sessionType: 'compress' | 'decompress'
+      
       if (file.name.toLowerCase().endsWith('.huff')) {
         response = await compressionApi.decompressFile(file)
+        sessionType = 'decompress'
         toast.success('Archivo descomprimido exitosamente')
       } else {
         response = await compressionApi.compressFile(file)
+        sessionType = 'compress'
         toast.success('Archivo comprimido exitosamente')
       }
 
       // Obtener sesión completa
       const session = await compressionApi.getSession(response.session_id)
-      setCurrentSession(session)
+      setCurrentSession(session, sessionType)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error desconocido'
       setError(message)

@@ -1,6 +1,6 @@
-"""
-Tipos de TypeScript compartidos
-"""
+/**
+ * Tipos de TypeScript compartidos
+ */
 
 export interface CompressionMetrics {
   original_size: number;
@@ -54,6 +54,7 @@ export interface CompressResponse {
 
 export interface DecompressResponse {
   success: boolean;
+  session_id: string;
   original_filename: string;
   original_size: number;
   compressed_size: number;
