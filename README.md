@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen)
 
-Huffman Compressor Pro es una aplicación web profesional y moderna para comprimir y descomprimir archivos de texto utilizando el algorit➍o de Huffman. Diseñada como proyecto académico de calidad productiva para Matemáticas Discretas e Ingeniería de Sistemas en la Universidad Pedagógica de Colombia.
+Huffman Compressor Pro es una aplicación web profesional y moderna para comprimir y descomprimir archivos de texto utilizando el algoritmo de Huffman. Diseñada como proyecto académico de calidad productiva para Matemáticas Discretas e Ingeniería de Sistemas en la Universidad Pedagógica de Colombia.
 
 ## 🎯 Características Principales
 
